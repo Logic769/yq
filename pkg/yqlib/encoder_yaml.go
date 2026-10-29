@@ -37,11 +37,15 @@ func (ye *yamlEncoder) Encode(writer io.Writer, node *CandidateNode) error {
 		lineEnding = "\r\n"
 	}
 	if node.Kind == ScalarNode && ye.prefs.UnwrapScalar {
-		valueToPrint := node.Value
-		if node.LeadingContent == "" || valueToPrint != "" {
-			valueToPrint = valueToPrint + lineEnding
+		// Unwrapping a single-quoted scalar that is empty or contains only quote
+		// characters would drop those characters, so let the YAML emitter handle it.
+		if node.Style&SingleQuotedStyle == 0 || strings.Trim(node.Value, "'") != "" {
+			valueToPrint := node.Value
+			if node.LeadingContent == "" || valueToPrint != "" {
+				valueToPrint = valueToPrint + lineEnding
+			}
+			return writeString(writer, valueToPrint)
 		}
-		return writeString(writer, valueToPrint)
 	}
 
 	destination := writer
